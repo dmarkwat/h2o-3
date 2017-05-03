@@ -7,15 +7,17 @@ source("../../../scripts/h2o-r-test-setup.R")
 # the purpose of this test, we are only going to use Power.  You can try GramSVD as well.
 test.pca.la1s <- function() {
   run_time_c = c()
-  num_run = 1
+  num_run = 2
 
   browser()
-  data = h2o.importFile("bigdata/laptop/jira/la1s.wc.arff.txt.zip",sep='',destination_frame = "data",header = T)
+  dataR = h2o.importFile("bigdata/laptop/jira/la1s.wc.arff.txt.zip",sep=',',destination_frame = "data",header = T, parse=FALSE)
+  data <- h2o.parseRaw(dataR, destination_frame = "bigParse",
+                              parse_type = "CSV", header = T) # chunk_size = 124022500 size will make one chunk.
   data$CLASS_LABEL = NULL
 
   for (runIndex in 1:num_run) {
     # k=1939 is very large and this is going to take a long time.
-    mm = h2o.prcomp(data,transform = "STANDARDIZE",k =1938,max_iterations = 300,pca_method = "Power")
+    mm = h2o.prcomp(data,transform = "STANDARDIZE",k =1938,max_iterations = 300,pca_method = "Randomized")
     print("PCA run time with car.arff.txt data in ms is ")
     print(mm@model$run_time)
     run_time_c = c(run_time_c,mm@model$run_time)
