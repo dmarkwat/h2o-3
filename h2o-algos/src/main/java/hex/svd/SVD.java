@@ -442,8 +442,6 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
       final int ncolA = dinfo._adaptedFrame.numCols();
 
       try {
-        double seigV  = sqrt(model._output._nobs);
-
         Vec[] vecs = new Vec[ncolA + _parms._nv];
         for (int i = 0; i < ncolA; i++) vecs[i] = dinfo._adaptedFrame.vec(i);
         for (int i = 0; i < _parms._nv; i++) vecs[ncolA + i] = qfrm.vec(i);
@@ -455,27 +453,29 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
         stsk.doAll(aqfrm);  // _atq size is _ncolExp by _nv
 
         if (_wideDataset) { // for wide dataset, calculate gram of B*T(B), get the SVD and proceed from there.
+/*          double[][] xgram = ArrayUtils.formGram(stsk._atq, false);
+          Matrix gramJ2 = new Matrix(xgram);  // form outer gram*/
+
           Frame tB = new water.util.ArrayUtils().frame(stsk._atq);
           DataInfo tbInfo = new DataInfo(tB, null, true, DataInfo.TransformType.NONE,
                   false, false, false);
           GramTask gtsk = new GramTask(_job._key, tbInfo).doAll(tB);
           Matrix gramJ = new Matrix(gtsk._gram.getXX());  // form outer gram
           SingularValueDecomposition svdJ = gramJ.svd();
-          double[][] svdJ_u = svdJ.getV().getMatrix(0, gramJ.getColumnDimension() - 1, 0,
-                  _parms._nv - 1).getArray();
 
             // 3) Form orthonormal matrix U = QV
           _job.update(1, "Forming distributed orthonormal matrix U");
-
-/*          model._output._u_key = Key.make(u_name);
+          double[][] svdJ_u = svdJ.getV().getMatrix(0, gramJ.getColumnDimension() - 1, 0,
+                  _parms._nv - 1).getArray();
+          model._output._u_key = Key.make(u_name);
           qinfo = new DataInfo(qfrm, null, true, DataInfo.TransformType.NONE, false, false, false);
           DKV.put(qinfo._key, qinfo);
           BMulTask btsk = new BMulTask(_job._key, qinfo, ArrayUtils.transpose(svdJ_u));
           btsk.doAll(_parms._nv, Vec.T_NUM, qinfo._adaptedFrame);
-          u = btsk.outputFrame(model._output._u_key, null, null);*/
-          makeUVec(model, u_name, u, qfrm, gramJ, svdJ);
-          model._output._d = (Arrays.copyOfRange(ArrayUtils.sqrtArr(svdJ.getSingularValues()),
-                  0, _parms._nv));
+          u = btsk.outputFrame(model._output._u_key, null, null);
+
+          model._output._d = ArrayUtils.mult((Arrays.copyOfRange(ArrayUtils.sqrtArr(svdJ.getSingularValues()),
+                  0, _parms._nv)), sqrt(tB.numRows()));
 
           // to get v, we need to do T(A)*U*D^-1
           // stuff A and U into a frame
@@ -502,7 +502,7 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
           // 3) Form orthonormal matrix U = QV
           _job.update(1, "Forming distributed orthonormal matrix U");
           if (_parms._keep_u) {
-            makeUVec(model, u_name, u, qfrm, atqJ, svdJ);
+            u = makeUVec(model, u_name, u, qfrm, atqJ, svdJ);
           }
 
           model._output._d = Arrays.copyOfRange(svdJ.getSingularValues(), 0, _parms._nv);
@@ -517,16 +517,16 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
     /*
       Form orthonormal matrix U = QV
      */
-    public void makeUVec(SVDModel model, String u_name, Frame u, Frame qfrm, Matrix atqJ,
-                         SingularValueDecomposition svdJ) {
+    public Frame makeUVec(SVDModel model, String u_name, Frame u, Frame qfrm, Matrix atqJ, SingularValueDecomposition svdJ ) {
       model._output._u_key = Key.make(u_name);
-      double[][] svdJ_u = svdJ.getV().getMatrix(0, atqJ.getColumnDimension() - 1, 0, _parms._nv - 1).getArray();
+      double[][] svdJ_u = svdJ.getV().getMatrix(0, atqJ.getColumnDimension() - 1, 0,
+              _parms._nv - 1).getArray();
       DataInfo qinfo = new DataInfo(qfrm, null, true, DataInfo.TransformType.NONE,
               false, false, false);
  //     DKV.put(qinfo._key, qinfo);
       BMulTask btsk = new BMulTask(_job._key, qinfo, ArrayUtils.transpose(svdJ_u));
       btsk.doAll(_parms._nv, Vec.T_NUM, qinfo._adaptedFrame);
-      u = btsk.outputFrame(model._output._u_key, null, null);
+      return btsk.outputFrame(model._output._u_key, null, null);
     }
     @Override
     public void computeImpl() {
