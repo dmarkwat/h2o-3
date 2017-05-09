@@ -171,7 +171,8 @@ public class LinearAlgebraUtils {
       _ncolA = ainfo._adaptedFrame.numCols();
       _ncolExp = ncolExp;   // when call from GLRM or PCA
       _ncolQ = ncolQ;
-      _atq = new double[_ncolExp][_ncolQ];
+      _atq = new double[_ncolExp][_ncolQ];  // okay to share among multiple threads.
+                                            // Each thread writes to different part of the array.
     }
 
     public SMulTask(DataInfo ainfo, int ncolQ) {
@@ -238,6 +239,7 @@ public class LinearAlgebraUtils {
       }
     }
 
+    // reduce must stay to account for multi node operation where arrays are not shared among nodes.
     @Override public void reduce(SMulTask other) {
       ArrayUtils.add(_atq, other._atq);
     }
