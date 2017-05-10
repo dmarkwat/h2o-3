@@ -24,8 +24,8 @@ def hdfs_import_bigCat():
         hdfs_cross_file = "/datasets/la1s.wc.arff.txt.zip"
         url = "hdfs://{0}{1}".format(hdfs_name_node, hdfs_cross_file)
         cross_h2o = h2o.import_file(url)
-        y = set(["CLASS_LABEL"])
-        x= list(set(cross_h2o.names-y))
+        cross_h2o.drop("CLASS_LABEL")
+        x= cross_h2o.names
         runtimes = []
 
         for ind in range(numTimes):
