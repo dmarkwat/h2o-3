@@ -466,14 +466,6 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
 
             // 3) Form orthonormal matrix U = QV
           _job.update(1, "Forming distributed orthonormal matrix U");
-/*          double[][] svdJ_u = svdJ.getV().getMatrix(0, gramJ.getColumnDimension() - 1, 0,
-                  _parms._nv - 1).getArray();
-          model._output._u_key = Key.make(u_name);
-          qinfo = new DataInfo(qfrm, null, true, DataInfo.TransformType.NONE, false, false, false);
-          DKV.put(qinfo._key, qinfo);
-          BMulTask btsk = new BMulTask(_job._key, qinfo, ArrayUtils.transpose(svdJ_u));
-          btsk.doAll(_parms._nv, Vec.T_NUM, qinfo._adaptedFrame);
-          u = btsk.outputFrame(model._output._u_key, null, null);*/
           u=makeUVec(model, u_name, u, qfrm, new Matrix(stsk._atq), svdJ);
           model._output._d = ArrayUtils.mult((Arrays.copyOfRange(ArrayUtils.sqrtArr(svdJ.getSingularValues()),
                   0, _parms._nv)), sqrt(tB.numRows()));

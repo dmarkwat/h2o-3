@@ -1,6 +1,5 @@
 package hex.util;
 
-import Jama.CholeskyDecomposition;
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
 import hex.DataInfo;
@@ -257,30 +256,13 @@ public class LinearAlgebraUtils {
     Gram.GramTask gtsk = new Gram.GramTask(jobKey, yinfo);  // Gram is Y'Y/n where n = nrow(Y)
     gtsk.doAll(yinfo._adaptedFrame);
     Matrix ygram = null;
-    // Gram.Cholesky chol = gtsk._gram.cholesky(null);   // If Y'Y = LL' Cholesky, then R = L'
-    if (xx==null)
-      ygram = new Matrix(gtsk._gram.getXX());
-    else
-      ygram = new Matrix(gtsk._gram.getXX(xx));
-
-    CholeskyDecomposition chol = new CholeskyDecomposition(ygram);
-    double[][] L = chol.getL().getArray();
+    Gram.Cholesky chol = gtsk._gram.cholesky(null);   // If Y'Y = LL' Cholesky, then R = L'
+    double[][] L = chol.getL();
     ArrayUtils.mult(L, Math.sqrt(gtsk._nobs));  // Must scale since Cholesky of Y'Y/n where nobs = nrow(Y)
     return transpose ? L : ArrayUtils.transpose(L);
+
   }
 
-/*  public static double[][] computeR(Key<Job> jobKey, DataInfo yinfo, boolean transpose) {
-    // Calculate Cholesky of Y Gram to get R' = L matrix
-    Gram.GramTask gtsk = new Gram.GramTask(jobKey, yinfo);  // Gram is Y'Y/n where n = nrow(Y)
-    gtsk.doAll(yinfo._adaptedFrame);
-    // Gram.Cholesky chol = gtsk._gram.cholesky(null);   // If Y'Y = LL' Cholesky, then R = L'
-    Matrix ygram = new Matrix(gtsk._gram.getXX());
-    CholeskyDecomposition chol = new CholeskyDecomposition(ygram);
-
-    double[][] L = chol.getL().getArray();
-    ArrayUtils.mult(L, Math.sqrt(gtsk._nobs));  // Must scale since Cholesky of Y'Y/n where nobs = nrow(Y)
-    return transpose ? L : ArrayUtils.transpose(L);
-  }*/
   /**
    * Solve for Q from Y = QR factorization and write into new frame
    * @param jobKey Job key for Gram calculation
@@ -288,13 +270,6 @@ public class LinearAlgebraUtils {
    * @param ywfrm Input frame [Y,W] where we write into W
    * @return l2 norm of Q - W, where W is old matrix in frame, Q is computed factorization
    */
-/*  public static double computeQ(Key<Job> jobKey, DataInfo yinfo, Frame ywfrm) {
-    double[][] cholL = computeR(jobKey, yinfo, true);
-    ForwardSolve qrtsk = new ForwardSolve(yinfo, cholL);
-    qrtsk.doAll(ywfrm);
-    return qrtsk._sse;      // \sum (Q_{i,j} - W_{i,j})^2
-  }*/
-
   public static double computeQ(Key<Job> jobKey, DataInfo yinfo, Frame ywfrm, double[][] xx) {
     double[][] cholL = computeR(jobKey, yinfo, true, xx);
     ForwardSolve qrtsk = new ForwardSolve(yinfo, cholL);
