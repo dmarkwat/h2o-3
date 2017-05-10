@@ -370,8 +370,9 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
 
         int wEndCol = 2*_parms._nv-1;
         int wEndColR = _parms._nv-1;
-
+        double t1, t2;
         while ((model._output._iterations < 10 || average_SEE > TOLERANCE) && model._output._iterations < _parms._max_iterations) {   // Run at least 10 iterations before tolerance cutoff
+          t1 = System.currentTimeMillis();
           if(stop_requested()) break;
           _job.update(1, "Iteration " + String.valueOf(model._output._iterations+1) + " of randomized subspace iteration");
 
@@ -413,6 +414,8 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
           model._output._history_average_SEE.add(average_SEE);
 
           model.update(_job);
+          t2 = System.currentTimeMillis()-t1;
+          warn("_train SVD iterations", "iteration "+model._output._iterations+" takes (ms) "+t2);
         }
 
         model._output._nobs = ybig.numRows(); // update nobs parameter
@@ -766,7 +769,10 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
                   "Scoring History from Power SVD", _job.start_time());
         } else if(_parms._svd_method == SVDParameters.Method.Randomized) {
           qfrm = randSubIter(dinfo, model);
+          double t1 = System.currentTimeMillis();
           u = directSVD(dinfo, qfrm, model, u_name);
+          double t2 = System.currentTimeMillis()-t1;
+          warn("_train SVD", "direct SVD takes (ms) "+t2);
           model._output._training_time_ms.add(System.currentTimeMillis());
           model._output._history_average_SEE.add(model._output._history_average_SEE.get(model._output._history_average_SEE.size()-1)); // add last err back to it
           LinkedHashMap<String, ArrayList> scoreTable = new LinkedHashMap<String, ArrayList>();
