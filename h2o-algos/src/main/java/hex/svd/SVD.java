@@ -252,7 +252,6 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
     private Frame randSubIterInPlace(DataInfo dinfo, SVDModel model) {
       DataInfo yinfo = null;
       Frame yqfrm = null;
-      double[][] atq =null;
 
       try {
         // 1) Initialize Y = AG where G ~ N(0,1) and compute Y = QR factorization
@@ -273,7 +272,6 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
         yinfo = new DataInfo(yqfrm, null, true, DataInfo.TransformType.NONE, true, false, false);
         DKV.put(yinfo._key, yinfo);
         LinearAlgebraUtils.computeQInPlace(_job._key, yinfo);
-        atq = new double[_ncolExp][_parms._nv];
 
         model._output._iterations = 0;
         while (model._output._iterations < _parms._max_iterations) {
@@ -281,7 +279,7 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
           _job.update(1, "Iteration " + String.valueOf(model._output._iterations+1) + " of randomized subspace iteration");
 
           // 2) Form \tilde{Y}_j = A'Q_{j-1} and compute \tilde{Y}_j = \tilde{Q}_j \tilde{R}_j factorization
-          SMulTask stsk = new SMulTask(dinfo, _parms._nv, atq);
+          SMulTask stsk = new SMulTask(dinfo, _parms._nv);
           stsk.doAll(aqfrm);
 
           Matrix ysmall = new Matrix(stsk._atq);
@@ -377,7 +375,7 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
           _job.update(1, "Iteration " + String.valueOf(model._output._iterations+1) + " of randomized subspace iteration");
 
           // 2) Form \tilde{Y}_j = A'Q_{j-1} and compute \tilde{Y}_j = \tilde{Q}_j \tilde{R}_j factorization
-          SMulTask stsk = new SMulTask(dinfo, _parms._nv, _ncolExp, atq);
+          SMulTask stsk = new SMulTask(dinfo, _parms._nv, _ncolExp);
           stsk.doAll(aqfrm);    // Pass in [A,Q]
 
           if (_wideDataset) {

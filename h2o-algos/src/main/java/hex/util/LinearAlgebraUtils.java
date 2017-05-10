@@ -16,8 +16,6 @@ import water.fvec.NewChunk;
 import water.fvec.Vec;
 import water.util.ArrayUtils;
 
-import java.util.Arrays;
-
 public class LinearAlgebraUtils {
   /*
    * Forward substitution: Solve Lx = b for x with L = lower triangular matrix, b = real vector
@@ -165,39 +163,23 @@ public class LinearAlgebraUtils {
 
     public double[][] _atq;    // Output: A'Q is p_exp by k, where p_exp = number of cols in A with categoricals expanded
 
+    public SMulTask(DataInfo ainfo, int ncolQ) {
+      _ainfo = ainfo;
+      _ncolA = ainfo._adaptedFrame.numCols();
+      _ncolExp = numColsExp(ainfo._adaptedFrame,true);
+      _ncolQ = ncolQ;
+    }
+
     public SMulTask(DataInfo ainfo, int ncolQ, int ncolExp) {
       _ainfo = ainfo;
       _ncolA = ainfo._adaptedFrame.numCols();
       _ncolExp = ncolExp;   // when call from GLRM or PCA
       _ncolQ = ncolQ;
-      _atq = new double[_ncolExp][_ncolQ];  // okay to share among multiple threads.
-                                            // Each thread writes to different part of the array.
-    }
-
-    public SMulTask(DataInfo ainfo, int ncolQ) {
-      this(ainfo, ncolQ, numColsExp(ainfo._adaptedFrame,true));
-    }
-
-    public SMulTask(DataInfo ainfo, int ncolQ, int ncolExp, double[][] atq) {
-      _ainfo = ainfo;
-      _ncolA = ainfo._adaptedFrame.numCols();
-      _ncolExp = ncolExp;   // when call from GLRM or PCA
-      _ncolQ = ncolQ;
-      _atq = atq; // zero out the entries before proceeding
-      int atqLen = atq.length;
-      assert ((atqLen==_ncolExp) && (atq[0].length==_ncolQ)); // make sure we do not have null arrays
-      for (int index = 0; index < atqLen; index++) {
-        Arrays.fill(_atq[index], 0);
-      }
-    }
-
-    // avoid memory allocation with this one
-    public SMulTask(DataInfo ainfo, int ncolQ, double[][] atq) {
-      this(ainfo, ncolQ, numColsExp(ainfo._adaptedFrame,true), atq);
     }
 
     @Override public void map(Chunk cs[]) {
       assert (_ncolA + _ncolQ) == cs.length;
+      _atq = new double[_ncolExp][_ncolQ];
 
       for(int k = _ncolA; k < (_ncolA + _ncolQ); k++) {
         // Categorical columns
@@ -255,7 +237,6 @@ public class LinearAlgebraUtils {
     // Calculate Cholesky of Y Gram to get R' = L matrix
     Gram.GramTask gtsk = new Gram.GramTask(jobKey, yinfo);  // Gram is Y'Y/n where n = nrow(Y)
     gtsk.doAll(yinfo._adaptedFrame);
-    Matrix ygram = null;
     Gram.Cholesky chol = gtsk._gram.cholesky(null);   // If Y'Y = LL' Cholesky, then R = L'
     double[][] L = chol.getL();
     ArrayUtils.mult(L, Math.sqrt(gtsk._nobs));  // Must scale since Cholesky of Y'Y/n where nobs = nrow(Y)
