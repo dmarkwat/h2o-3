@@ -57,7 +57,6 @@ public class XGBoostUpdateTask extends MRTask<XGBoostUpdateTask> {
             //booster.setParam("eta", effective_learning_rate(model));
             booster.update(trainMat, tid);
             Rabit.shutdown();
-            trainMat.dispose();
         } catch (XGBoostError xgBoostError) {
             xgBoostError.printStackTrace();
         }

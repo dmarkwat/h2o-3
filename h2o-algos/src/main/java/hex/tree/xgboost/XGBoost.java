@@ -535,11 +535,6 @@ public class XGBoost extends ModelBuilder<XGBoostModel,XGBoostModel.XGBoostParam
         // final scoring
         doScoring(model, model.model_info()._booster, trainMat, validMat, true, rabitEnv);
 
-        trainMat.dispose();
-        if(null != validMat) {
-          validMat.dispose();
-        }
-
         // save the model to DKV
         model.model_info().nativeToJava();
       } catch (XGBoostError xgBoostError) {

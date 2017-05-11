@@ -91,10 +91,6 @@ public class XGBoostTrainingTask extends MRTask<XGBoostTrainingTask> {
             }
 
             HashMap<String, DMatrix> watches = new HashMap<>();
-            if (validMat!=null)
-                watches.put("valid", validMat);
-            else
-                watches.put("train", trainMat);
 
             rabitEnv.put("XGBOOST_TASK_ID", Thread.currentThread().getName());
             Rabit.init(rabitEnv);
@@ -102,11 +98,6 @@ public class XGBoostTrainingTask extends MRTask<XGBoostTrainingTask> {
             booster = ml.dmlc.xgboost4j.java.XGBoost.train(trainMat, XGBoostModel.createParams(_parms, _output), 0, watches, null, null);
 
             Rabit.shutdown();
-
-            trainMat.dispose();
-            if(null != validMat) {
-                validMat.dispose();
-            }
         } catch (XGBoostError xgBoostError) {
             xgBoostError.printStackTrace();
         }
