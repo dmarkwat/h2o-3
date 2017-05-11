@@ -34,7 +34,7 @@ def hdfs_import_bigCat():
             randomizedPCA.train(x=x, training_frame=cross_h2o)
             runtimes.append(randomizedPCA._model_json["output"]["run_time"])
             print("Run time in (ms) is {0}".format(runtimes))
-            h2o.rm(randomizedPCA)       # remove model to save space just in case
+            h2o.remove(randomizedPCA)       # remove model to save space just in case
 
         # write out summary run results
         print("*******************************")
